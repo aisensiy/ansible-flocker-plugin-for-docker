@@ -1,0 +1,24 @@
+---
+
+- name: Updating apt cache
+  apt:
+    update_cache: yes
+
+- name: Install dependencies
+  apt:
+  with_items:
+    - apt-transport-https
+    - software-properties-common
+
+- name: Add repo
+  apt_repository: repo="deb https://clusterhq-archive.s3.amazonaws.com/ubuntu/$(lsb_release --release --short)/\$(ARCH) /"
+
+- name: Updating apt cache
+  apt:
+    update_cache: yes
+
+- name: Install flocker node
+  apt: name=clusterhq-flocker-node
+
+- name: Install plugin
+  apt: name=clusterhq-flocker-docker-plugin
