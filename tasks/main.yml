@@ -4,11 +4,11 @@
   apt:
     update_cache: yes
 
-- name: Install dependencies
-  apt:
-  with_items:
-    - apt-transport-https
-    - software-properties-common
+- name: Install apt-transport-https
+  apt: name=apt-transport-https force=yes
+
+- name: Install software-properties-common
+  apt: name=software-properties-common force=yes
 
 - name: Add repo
   apt_repository: repo="deb https://clusterhq-archive.s3.amazonaws.com/ubuntu/$(lsb_release --release --short)/\$(ARCH) /"
@@ -18,7 +18,67 @@
     update_cache: yes
 
 - name: Install flocker node
-  apt: name=clusterhq-flocker-node
+  apt: name=clusterhq-flocker-node force=yes
 
 - name: Install plugin
-  apt: name=clusterhq-flocker-docker-plugin
+  apt: name=clusterhq-flocker-docker-plugin force=yes
+
+- name: Install flocker cli
+  apt: name=clusterhq-flocker-cli force=yes
+
+- name: Create flocker config directory
+  file: path=/etc/flocker state=directory
+
+- name: Copy control key
+  copy:
+    src: control.key
+    dest: /etc/flocker/control-service.key
+
+- name: Copy control crt
+  copy:
+    src: control.crt
+    dest: /etc/flocker/control-service.crt
+
+- name: Copy agent key
+  copy:
+    src: node.crt
+    dest: /etc/flocker/node.crt
+
+- name: Copy agent crt
+  copy:
+    src: node.key
+    dest: /etc/flocker/node.key
+
+- name: Copy plugin key
+  copy:
+    src: plugin.key
+    dest: /etc/flocker/plugin.key
+
+- name: Copy plugin crt
+  copy:
+    src: plugin.crt
+    dest: /etc/flocker/plugin.crt
+
+
+- name: Set control config
+  template: src=flocker-control.j2 dest=/etc/init/flocker-control.override
+
+- name: register control api
+  lineinfile: dest=/etc/services line='flocker-control-api       4523/tcp' insertafter=EOF
+
+- name: register control agent
+  lineinfile: dest=/etc/services line='flocker-control-agent     4524/tcp' insertafter=EOF
+
+- service: name=flocker-control state=restarted
+
+- name: Set agent config
+  template: src=flocker-agent.j2 dest=/etc/flocker/agent.yml
+
+- service: name=flocker-container-agent state=restarted
+
+- service: name=flocker-dataset-agent state=restarted
+
+- name: Set plugin config
+  template: src=flocker-docker-plugin.conf.j2 dest=/etc/init/flocker-docker-plugin.conf
+
+- service: name=flocker-docker-plugin state=restarted

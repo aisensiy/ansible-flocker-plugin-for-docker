@@ -1,0 +1,9 @@
+# flocker-plugin - flocker-docker-plugin job file
+
+description "Flocker Plugin service"
+author "ClusterHQ <support@clusterhq.com>"
+
+respawn
+env FLOCKER_CONTROL_SERVICE_BASE_URL=https://{{ CONTROL_IP }}:4523/v1
+env MY_NETWORK_IDENTITY={{ NODE_IP }}
+exec /usr/sbin/flocker-docker-plugin
